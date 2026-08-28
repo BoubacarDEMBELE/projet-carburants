@@ -5,7 +5,6 @@ from datetime import datetime
 from sqlalchemy import create_engine, text
 
 # --- CONFIGURATION ---
-# Remplace LAT et LON par tes propres coordonnées GPS si besoin
 LAT, LON, RAYON = 48.8566, 2.3522, "10km" 
 URL = "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/records"
 
@@ -89,12 +88,12 @@ for item in records:
 df_stations = pd.DataFrame(stations_list).drop_duplicates(subset=["id_station"])
 df_prix = pd.DataFrame(prix_list).drop_duplicates(subset=["id_station", "carburant", "date_releve"])
 
-# --- 3. INGESTION SQL (UPSERT) ---
+# --- 3. INGESTION SQL (UPSERT VECTORISÉ + PURGE) ---
 engine = create_engine(DATABASE_URL)
 
 with engine.begin() as conn:
-    # Upsert Stations
-    for _, row in df_stations.iterrows():
+    # 1. Upsert Stations en bloc (si non vide)
+    if not df_stations.empty:
         sql_station = text("""
             INSERT INTO station (id_station, adresse, ville, cp, latitude, longitude, distance_km)
             VALUES (:id_station, :adresse, :ville, :cp, :latitude, :longitude, :distance_km)
@@ -106,10 +105,10 @@ with engine.begin() as conn:
                 longitude = EXCLUDED.longitude,
                 distance_km = EXCLUDED.distance_km;
         """)
-        conn.execute(sql_station, row.to_dict())
+        conn.execute(sql_station, df_stations.to_dict(orient="records"))
 
-    # Upsert Prix
-    for _, row in df_prix.iterrows():
+    # 2. Upsert Prix en bloc (si non vide)
+    if not df_prix.empty:
         sql_prix = text("""
             INSERT INTO prix_carburant (id_station, carburant, prix, date_releve)
             VALUES (:id_station, :carburant, :prix, :date_releve)
@@ -117,6 +116,13 @@ with engine.begin() as conn:
                 prix = EXCLUDED.prix,
                 collecte_le = NOW();
         """)
-        conn.execute(sql_prix, row.to_dict())
+        conn.execute(sql_prix, df_prix.to_dict(orient="records"))
 
-print("Insertion/Mise à jour réussie dans Supabase !")
+    # 3. Purge automatique des données de plus de 30 jours
+    sql_cleanup = text("""
+        DELETE FROM prix_carburant 
+        WHERE date_releve::date < CURRENT_DATE - INTERVAL '30 days';
+    """)
+    conn.execute(sql_cleanup)
+
+print("Insertion, mise à jour et nettoyage réussis dans Supabase !")

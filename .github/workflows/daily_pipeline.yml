@@ -6,6 +6,9 @@ on:
     - cron: '0 6 * * *'  # Exécution chaque jour à 6h00 UTC
   workflow_dispatch:      # Permet le lancement manuel depuis GitHub
 
+permissions:
+  contents: write         # requis pour committer l'archive froide
+
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
@@ -27,6 +30,16 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python collect_carburants.py
+
+      - name: Commit de l'archive froide
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/snapshots/
+          # Ne committe que s'il y a réellement un changement : sans ce garde-fou,
+          # une relance le même jour ferait échouer le run sur "nothing to commit".
+          git diff --staged --quiet || git commit -m "data: releve du $(date -u +%F)"
+          git push
 
 
         

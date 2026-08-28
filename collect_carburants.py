@@ -1,7 +1,9 @@
 import os
+import sys
 import requests
 import pandas as pd
 from datetime import datetime
+from pathlib import Path
 from sqlalchemy import create_engine, text
 
 # --- CONFIGURATION ---
@@ -35,8 +37,10 @@ records = fetch_data()
 print(f"{len(records)} stations trouvées dans la zone.")
 
 if not records:
-    print("Aucune donnée récupérée.")
-    exit()
+    # sys.exit(1) et non exit() : sans code de retour non nul, GitHub Actions
+    # afficherait ce run en vert et la journée perdue passerait inaperçue.
+    print("ERREUR : aucune donnée récupérée.")
+    sys.exit(1)
 
 # --- 2. TRANSFORMATION DES DONNÉES ---
 stations_list = []
@@ -87,6 +91,24 @@ for item in records:
 
 df_stations = pd.DataFrame(stations_list).drop_duplicates(subset=["id_station"])
 df_prix = pd.DataFrame(prix_list).drop_duplicates(subset=["id_station", "carburant", "date_releve"])
+
+# --- 2 bis. ARCHIVE FROIDE (snapshot quotidien versionné dans Git) ---
+# Postgres ne conserve que 30 jours glissants (purge en fin de script).
+# Sans cette archive, tout ce qui dépasse 30 jours serait perdu DÉFINITIVEMENT,
+# sans aucun rattrapage possible : le flux de l'API est un instantané, il n'a
+# pas de mémoire.
+#
+# Architecture chaud / froid :
+#   Postgres = 30 derniers jours, indexés, pour l'analyse rapide
+#   Git      = historique complet, compressé, gratuit et illimité dans le temps
+#
+# On archive à la granularité MAXIMALE (une ligne par station x carburant).
+# On pourra toujours agréger plus tard ; on ne pourra jamais désagréger.
+SNAPSHOT_DIR = Path("data/snapshots")
+SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+snapshot_path = SNAPSHOT_DIR / f"{today}.csv.gz"
+df_prix.to_csv(snapshot_path, index=False, compression="gzip")
+print(f"Archive froide : {snapshot_path} ({len(df_prix)} lignes)")
 
 # --- 3. INGESTION SQL (UPSERT VECTORISÉ + PURGE) ---
 engine = create_engine(DATABASE_URL)

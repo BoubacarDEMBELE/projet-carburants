@@ -70,7 +70,7 @@ if not raw_records:
 # Même architecture chaud/froid que le pipeline carburants :
 #   Postgres = la table structurée, requêtable
 #   Git      = le brut compressé, pour rejouer un parsing a posteriori
-RAW_DIR = Path("data/sncf_raw")
+RAW_DIR = Path("data/sncf")
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 raw_path = RAW_DIR / f"{date.today():%Y-%m-%d}.json.gz"
 with gzip.open(raw_path, "wt", encoding="utf-8") as f:

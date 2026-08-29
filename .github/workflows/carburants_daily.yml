@@ -30,7 +30,7 @@ jobs:
       - name: Execute script
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: python collect_carburants.py
+        run: python carburants/collect.py
 
       - name: Commit de l'archive froide
         run: |
@@ -39,7 +39,7 @@ jobs:
           # Le workflow SNCF pousse aussi sur ce dépôt : on se resynchronise
           # avant de committer pour éviter tout rejet non-fast-forward.
           git pull --rebase --autostash origin main
-          git add data/snapshots/
+          git add data/carburants/
           # Ne committe que s'il y a réellement un changement : sans ce garde-fou,
           # une relance le même jour ferait échouer le run sur "nothing to commit".
           git diff --staged --quiet || git commit -m "data: releve du $(date -u +%F)"

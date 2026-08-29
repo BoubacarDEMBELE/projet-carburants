@@ -104,7 +104,7 @@ df_prix = pd.DataFrame(prix_list).drop_duplicates(subset=["id_station", "carbura
 #
 # On archive à la granularité MAXIMALE (une ligne par station x carburant).
 # On pourra toujours agréger plus tard ; on ne pourra jamais désagréger.
-SNAPSHOT_DIR = Path("data/snapshots")
+SNAPSHOT_DIR = Path("data/carburants")
 SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
 snapshot_path = SNAPSHOT_DIR / f"{today}.csv.gz"
 df_prix.to_csv(snapshot_path, index=False, compression="gzip")

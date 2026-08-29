@@ -39,14 +39,14 @@ jobs:
       - name: Execute script
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: python collect_sncf.py
+        run: python sncf/collect.py
 
       - name: Commit de l'archive brute
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git pull --rebase --autostash origin main
-          git add data/sncf_raw/
+          git add data/sncf/
           # Ne committe que s'il y a réellement un changement.
           git diff --staged --quiet || git commit -m "data: export SNCF du $(date -u +%F)"
           git push

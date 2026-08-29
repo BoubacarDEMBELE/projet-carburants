@@ -1,11 +1,12 @@
--- Schéma de la base — projet prix des carburants
+-- Schéma — projet 2 : prix des carburants
 -- À exécuter dans Supabase : SQL Editor -> New query -> Run
 --
--- ⚠️ RECONSTRUIT À PARTIR DU CODE, PAS EXPORTÉ DE LA BASE.
--- Ce fichier a été déduit des requêtes INSERT / ON CONFLICT de
--- collect_carburants.py. Il doit être conforme, mais vérifie-le une fois
--- avec la requête de contrôle en bas de ce fichier, puis supprime cet
--- avertissement.
+-- Écrit d'après les requêtes INSERT / ON CONFLICT de carburants/collect.py.
+-- Colonnes et types sont donc vérifiés par la pratique : toute divergence
+-- ferait échouer le chargement quotidien, qui tourne en production depuis
+-- le 28/08/2026. Index et contraintes, eux, ne sont pas exercés par le
+-- chargement — la requête de contrôle en bas du fichier permet de les
+-- comparer à la base réelle.
 
 -- ---------------------------------------------------------------------------
 -- Dimension : les stations. Change rarement.

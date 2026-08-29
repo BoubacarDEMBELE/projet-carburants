@@ -1,9 +1,11 @@
 -- Schéma — projet 3 : régularité mensuelle TGV (SNCF)
 -- À exécuter dans Supabase : SQL Editor -> New query -> Run
 --
--- ⚠️ RECONSTRUIT À PARTIR DU CODE, PAS EXPORTÉ DE LA BASE.
--- Déduit des requêtes INSERT de sncf/collect.py. Vérifie-le une fois avec
--- la requête de contrôle en bas, puis supprime cet avertissement.
+-- Écrit d'après les requêtes INSERT de sncf/collect.py. Colonnes et types
+-- sont donc vérifiés par la pratique : toute divergence ferait échouer le
+-- chargement, qui a tourné en production le 29/08/2026 avec 12 544 lignes.
+-- Index et contraintes ne sont pas exercés par le chargement — la requête
+-- de contrôle en bas du fichier permet de les comparer à la base réelle.
 
 -- ---------------------------------------------------------------------------
 -- Une ligne par liaison et par mois.

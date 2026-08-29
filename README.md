@@ -3,8 +3,10 @@
 ![Carburants](https://github.com/BoubacarDEMBELE/projet-carburants/actions/workflows/carburants_daily.yml/badge.svg)
 ![SNCF](https://github.com/BoubacarDEMBELE/projet-carburants/actions/workflows/sncf_monthly.yml/badge.svg)
 ![DVF](https://github.com/BoubacarDEMBELE/projet-carburants/actions/workflows/dvf_quarterly.yml/badge.svg)
+![DPE](https://github.com/BoubacarDEMBELE/projet-carburants/actions/workflows/dpe_quarterly.yml/badge.svg)
 
 Cinq pipelines sur des données ouvertes françaises, du plus simple au plus complet.
+**Les cinq sont en production.**
 Même méthode partout : **récupérer → héberger → nettoyer → croiser → publier**.
 
 **Coût total d'infrastructure : 0 €.** Aucun serveur ne tourne.
@@ -19,7 +21,7 @@ Même méthode partout : **récupérer → héberger → nettoyer → croiser �
 | 2 | [Prix des carburants](carburants/) | Pipeline quotidienne, idempotence, cron, rétention chaud/froid | ✅ |
 | 3 | [Régularité TGV](sncf/) | Consommation d'API, plafonds de pagination, contrôle qualité | ✅ |
 | 4 | [Valeurs foncières (DVF)](dvf/) | Nettoyage de données réelles, dédoublonnage, valeurs aberrantes | ✅ |
-| 5 | DVF × DPE | Croisement de sources sans clé commune, géocodage, jointure floue | ⚪ |
+| 5 | [DVF × DPE](dpe/) | Croisement de sources sans clé commune, jointure floue, variables de contrôle | ✅ |
 
 ---
 
@@ -60,10 +62,12 @@ plus tard, jamais désagréger.
 ├── carburants/          projet 2 — collect.py, schema.sql, README
 ├── sncf/                projet 3 — collect.py, schema.sql, README
 ├── dvf/                 projet 4 — collect.py, schema.sql, README
+├── dpe/                 projet 5 — collect.py, schema.sql, README
 ├── data/
 │   ├── carburants/      archives quotidiennes (.csv.gz)
 │   ├── sncf/            archives mensuelles (.json.gz)
-│   └── dvf/             archives trimestrielles (.csv.gz)
+│   ├── dvf/             archives trimestrielles (.csv.gz)
+│   └── dpe/             archives trimestrielles (.csv.gz)
 ├── .github/workflows/   un workflow par projet
 └── requirements.txt     dépendances partagées
 ```
@@ -88,6 +92,7 @@ Les scripts se lancent depuis la racine du dépôt :
 python carburants/collect.py
 python sncf/collect.py
 python dvf/collect.py
+python dpe/collect.py
 ```
 
 ---
@@ -109,6 +114,9 @@ réellement rencontrées, pas de principes théoriques.
 | Noms de champs vérifiés sur la source | Le nom d'un champ n'est pas sa documentation. |
 | On archive ce qui est cher à refabriquer | Pas ce qui est gratuit à retélécharger. |
 | Un dédoublonnage qui supprime = clé incomplète | Une clé bien choisie est déjà unique. |
+| Pagination à curseur, jamais par offset | L'offset plafonne et tronque en silence. |
+| Un croisement se publie avec son taux d'appariement | Sans lui, ce n'est pas un résultat mais une opinion. |
+| Un résultat sans variable de contrôle est suspect | Il mesure surtout ce qu'on a oublié de mesurer. |
 
 ---
 
@@ -116,4 +124,5 @@ réellement rencontrées, pas de principes théoriques.
 
 Code sous licence MIT.
 Données sous [Licence Ouverte 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/) —
-Ministère de l'Économie (prix des carburants), SNCF (régularité TGV), Etalab (DVF).
+Ministère de l'Économie (prix des carburants), SNCF (régularité TGV),
+Etalab (DVF), ADEME (DPE).

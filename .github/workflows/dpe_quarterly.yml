@@ -1,0 +1,47 @@
+name: Quarterly DPE Crossing
+
+on:
+  schedule:
+    # Le 10 de janvier, avril, juillet et octobre, à 9h UTC.
+    #
+    # Deux heures APRES le workflow DVF (7h) : ce croisement relit la table
+    # dvf_vente, il doit donc s'exécuter une fois celle-ci à jour. L'ordre
+    # entre pipelines dépendantes se gère par l'horaire, faute de mécanisme
+    # de dépendance natif dans GitHub Actions.
+    - cron: '0 9 10 1,4,7,10 *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  croisement-dpe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Installe les dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Croisement et chargement
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python dpe/collect.py
+
+      - name: Commit de l'archive
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase --autostash origin main
+          git add data/dpe/
+          git diff --staged --quiet || git commit -m "data: croisement DPE du $(date -u +%F)"
+          git push

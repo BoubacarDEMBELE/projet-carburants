@@ -1,0 +1,48 @@
+name: Quarterly DVF Collection
+
+on:
+  schedule:
+    # Le 10 de janvier, avril, juillet et octobre, à 7h UTC.
+    #
+    # DVF est republié environ deux fois par an. Un trimestre suffit donc
+    # largement, et évite de retélécharger 9 Mo pour rien.
+    #
+    # 7h : le workflow carburants tourne à 6h et le SNCF à 8h. Trois pushs
+    # sur le même dépôt, jamais à la même heure.
+    - cron: '0 7 10 1,4,7,10 *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  collecte-dvf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Installe les dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Collecte et chargement
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python dvf/collect.py
+
+      - name: Commit de l'archive
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase --autostash origin main
+          git add data/dvf/
+          git diff --staged --quiet || git commit -m "data: DVF du $(date -u +%F)"
+          git push

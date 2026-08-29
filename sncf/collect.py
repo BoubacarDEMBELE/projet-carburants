@@ -73,7 +73,7 @@ if not raw_records:
 RAW_DIR = Path("data/sncf")
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 raw_path = RAW_DIR / f"{date.today():%Y-%m-%d}.json.gz"
-with gzip.open(raw_path, "wt", encoding="utf-8") as f:
+with gzip.open(raw_path, "wt", encoding="utf-8", mtime=0) as f:  # mtime=0 : sortie deterministe
     json.dump(raw_records, f, ensure_ascii=False)
 print(f"Archive brute : {raw_path} ({raw_path.stat().st_size} octets)")
 

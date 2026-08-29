@@ -68,8 +68,14 @@ order by etiquette_dpe;
 create or replace view v_decote_controlee as
 with base as (
     select periode_construction, passoire,
-           count(*)                                                    as n,
-           percentile_cont(0.5) within group (order by prix_m2)        as median
+           count(*)                                             as n,
+           -- percentile_cont renvoie du DOUBLE PRECISION, pas du numeric.
+           -- On caste ici une bonne fois : round(x, n) a DEUX arguments
+           -- n'existe QUE pour numeric en PostgreSQL. Sans ce cast :
+           --   ERROR 42883: function round(double precision, integer) does not exist
+           -- (round(x) a un seul argument, lui, accepte double precision —
+           --  d'ou une erreur qui ne se declare que sur certaines lignes.)
+           percentile_cont(0.5) within group (order by prix_m2)::numeric as median
     from dvf_dpe
     where periode_construction is not null
     group by periode_construction, passoire
@@ -109,12 +115,28 @@ order by p.periode_construction;
 --   having count(*) >= 30
 --   order by pct_passoires desc;
 
--- Double contrôle : même période ET même rue
---   select round(100 * (
+-- Écart global passoires / autres, sur l'ensemble des ventes appariées.
+-- Noter le ::numeric : sans lui, round(..., 1) échoue sur du double precision.
+--   select round((100 * (
 --     percentile_cont(0.5) within group (order by prix_m2) filter (where passoire)
 --     / nullif(percentile_cont(0.5) within group (order by prix_m2) filter (where not passoire), 0)
---     - 1), 1) as ecart_pct
+--     - 1))::numeric, 1) as ecart_pct
 --   from dvf_dpe;
+
+-- Double contrôle : même période ET même rue (le résultat le plus honnête)
+--   select round(avg(ecart)::numeric, 1) as ecart_moyen_pct, sum(n_passoires) as n
+--   from (
+--     select periode_construction, voie,
+--            100 * (
+--              percentile_cont(0.5) within group (order by prix_m2) filter (where passoire)
+--              / nullif(percentile_cont(0.5) within group (order by prix_m2) filter (where not passoire), 0)
+--              - 1)                                      as ecart,
+--            count(*) filter (where passoire)            as n_passoires
+--     from dvf_dpe
+--     group by periode_construction, voie
+--     having count(*) filter (where passoire) >= 5
+--        and count(*) filter (where not passoire) >= 5
+--   ) t;
 
 -- Audit de la jointure : quelle était la qualité des rapprochements ?
 --   select round(ecart_surface, 2) as ecart, count(*)

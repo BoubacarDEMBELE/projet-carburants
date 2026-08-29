@@ -1,0 +1,52 @@
+name: Monthly SNCF Regularity Collection
+
+on:
+  schedule:
+    # Le 5 de chaque mois à 8h00 UTC.
+    #
+    # Le jeu de données est MENSUEL : une collecte quotidienne retéléchargerait
+    # 12 544 lignes identiques tous les jours, pour 449 Mo d'archive par an
+    # au lieu de 15 Mo.
+    #
+    # 8h et non 6h : le workflow carburants tourne à 6h et pousse lui aussi sur
+    # ce dépôt. Deux pushs simultanés le 5 du mois = un échec non-fast-forward.
+    - cron: '0 8 5 * *'
+  workflow_dispatch: {}     # lancement manuel depuis l'onglet Actions
+
+permissions:
+  contents: write           # requis pour committer l'archive brute
+
+jobs:
+  collecte-sncf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20     # l'export complet peut être lent
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Execute script
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python collect_sncf.py
+
+      - name: Commit de l'archive brute
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase --autostash origin main
+          git add data/sncf_raw/
+          # Ne committe que s'il y a réellement un changement.
+          git diff --staged --quiet || git commit -m "data: export SNCF du $(date -u +%F)"
+          git push

@@ -36,6 +36,9 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Le workflow SNCF pousse aussi sur ce dépôt : on se resynchronise
+          # avant de committer pour éviter tout rejet non-fast-forward.
+          git pull --rebase --autostash origin main
           git add data/snapshots/
           # Ne committe que s'il y a réellement un changement : sans ce garde-fou,
           # une relance le même jour ferait échouer le run sur "nothing to commit".

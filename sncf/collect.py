@@ -96,12 +96,24 @@ for item in raw_records:
     # `nombre_en_service` n'existe pas dans la source : on le dérive.
     circules = (prevu - annule) if (prevu is not None and annule is not None) else None
 
-    id_liaison_mois = f"{date_str}_{depart}_{arrivee}".replace(" ", "_")
+    # `service` FAIT PARTIE DE LA CLÉ.
+    #
+    # Une même liaison, un même mois, peut exister en National ET en
+    # International : ce sont deux dessertes distinctes, avec leurs propres
+    # chiffres. Exemple réel — 2025-07, PARIS LYON -> MACON LOCHE :
+    #   International :  63 trains, 5,18 min de retard moyen
+    #   National      : 189 trains, 10,63 min
+    #
+    # Sans `service` dans la clé, 42 lignes sur 12 544 étaient écrasées par
+    # drop_duplicates, et la survivante choisie arbitrairement : perte de
+    # données ET valeurs potentiellement fausses, sans la moindre erreur.
+    service = item.get("service")
+    id_liaison_mois = f"{date_str}_{depart}_{arrivee}_{service}".replace(" ", "_")
 
     parsed_list.append({
         "id_liaison_mois": id_liaison_mois,
         "annee_mois": str(date_str),
-        "axe": item.get("service"),          # "National" / "International"
+        "axe": service,                      # "National" / "International"
         "depart": depart,
         "arrivee": arrivee,
         "nombre_programmes": prevu,
@@ -124,7 +136,27 @@ if not parsed_list:
     print("ERREUR : aucun enregistrement n'a pu être parsé.")
     sys.exit(1)
 
-df_clean = pd.DataFrame(parsed_list).drop_duplicates(subset=["id_liaison_mois"])
+df_brut = pd.DataFrame(parsed_list)
+df_clean = df_brut.drop_duplicates(subset=["id_liaison_mois"])
+
+# Garde-fou : un dédoublonnage ne doit RIEN supprimer.
+#
+# Si la clé naturelle est bien choisie, elle est déjà unique et
+# drop_duplicates est un simple filet. Dès qu'il supprime des lignes, c'est
+# que la clé est incomplète et que des enregistrements DISTINCTS sont écrasés
+# — silencieusement, et en gardant une ligne choisie au hasard.
+#
+# C'est précisément ce qui s'est produit : 42 lignes perdues faute d'avoir
+# mis `service` dans la clé.
+perdues = len(df_brut) - len(df_clean)
+if perdues:
+    exemples = (
+        df_brut[df_brut.duplicated(subset=["id_liaison_mois"], keep=False)]
+        ["id_liaison_mois"].unique()[:3]
+    )
+    print(f"ERREUR : {perdues} lignes ecrasees par le dedoublonnage.")
+    print(f"La cle naturelle est incomplete. Exemples : {list(exemples)}")
+    sys.exit(1)
 
 # Contrôle qualité : la somme des causes doit valoir ~100 % quand elle est
 # renseignée. Si ce n'est pas le cas, un champ a changé de nom côté source.

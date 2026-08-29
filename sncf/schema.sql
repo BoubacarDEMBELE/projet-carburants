@@ -9,9 +9,13 @@
 -- Une ligne par liaison et par mois.
 -- ---------------------------------------------------------------------------
 create table if not exists sncf_regularite (
-    -- Clé naturelle : "AAAA-MM_GARE_DEPART_GARE_ARRIVEE".
+    -- Clé naturelle : "AAAA-MM_GARE_DEPART_GARE_ARRIVEE_SERVICE".
     -- Composée à partir de la source, elle rend l'ingestion idempotente
     -- sans dépendre d'un identifiant que l'API ne fournit pas.
+    --
+    -- `service` est indispensable : une même liaison, un même mois, peut
+    -- exister en National ET en International. Sans lui, 42 lignes sur
+    -- 12 544 étaient silencieusement écrasées.
     id_liaison_mois               text primary key,
 
     annee_mois                    text not null,      -- format "2018-01"

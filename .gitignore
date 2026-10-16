@@ -3,3 +3,11 @@ data/raw/
 __pycache__/
 *.pyc
 .env
+
+# snowflake-dbt
+snowflake-dbt/dbt/profiles.yml
+snowflake-dbt/dbt/target/
+snowflake-dbt/dbt/dbt_packages/
+snowflake-dbt/dbt/logs/
+*.p8
+rsa_key*

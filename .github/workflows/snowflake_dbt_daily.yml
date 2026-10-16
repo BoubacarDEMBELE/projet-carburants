@@ -1,0 +1,53 @@
+name: snowflake-dbt-daily
+
+# Projet 6 — ingestion nationale des prix des carburants dans Snowflake, puis dbt build (staging → marts, tests).
+# 07:30 UTC : après carburants_daily (06:00), aucun autre workflow à cette heure.
+on:
+  schedule:
+    - cron: "30 7 * * *"
+  workflow_dispatch:
+
+jobs:
+  ingest-and-transform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: snowflake-dbt
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: FUEL_SVC
+      SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+      SNOWFLAKE_ROLE: TRANSFORMER
+      SNOWFLAKE_WAREHOUSE: FUEL_WH
+      SNOWFLAKE_DATABASE: FUEL_DB
+    steps:
+      - name: Secrets Snowflake présents ?
+        id: secrets
+        run: |
+          if [ -z "$SNOWFLAKE_ACCOUNT" ] || [ -z "$SNOWFLAKE_PRIVATE_KEY" ]; then
+            echo "::notice::Secrets Snowflake absents : exécution ignorée (voir snowflake-dbt/DEMARRAGE.md)."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+        working-directory: .
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ok == 'true'
+      - uses: actions/setup-python@v5
+        if: steps.secrets.outputs.ok == 'true'
+        with:
+          python-version: "3.12"
+      - name: Dépendances
+        if: steps.secrets.outputs.ok == 'true'
+        run: pip install -r ingestion/requirements.txt
+      - name: Ingestion (API open data → RAW)
+        if: steps.secrets.outputs.ok == 'true'
+        run: python ingestion/load_fuel_prices.py
+      - name: dbt build
+        if: steps.secrets.outputs.ok == 'true'
+        working-directory: snowflake-dbt/dbt
+        run: |
+          cp profiles.example.yml profiles.yml
+          dbt deps
+          dbt source freshness --profiles-dir .
+          dbt build --profiles-dir .

@@ -1,0 +1,7 @@
+fuel_code,fuel_label,fuel_family
+GAZOLE,Diesel (B7),diesel
+SP95,Unleaded 95 (E5),petrol
+SP98,Unleaded 98 (E5),petrol
+E10,Unleaded 95 (E10),petrol
+E85,Superethanol (E85),alternative
+GPLC,LPG,alternative

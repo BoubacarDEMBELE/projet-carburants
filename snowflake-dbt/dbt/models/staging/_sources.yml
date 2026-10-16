@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: raw
+    database: "{{ env_var('SNOWFLAKE_DATABASE', 'FUEL_DB') }}"
+    schema: raw
+    tables:
+      - name: fuel_prices_raw
+        description: One JSON record per station per ingestion run, exactly as returned by the API.
+        loaded_at_field: loaded_at
+        freshness:
+          warn_after: {count: 26, period: hour}
+          error_after: {count: 50, period: hour}

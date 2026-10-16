@@ -1,0 +1,15 @@
+# Copy to profiles.yml (git-ignored). Credentials come from environment variables only.
+# Key-pair authentication: SNOWFLAKE_PRIVATE_KEY holds the PEM content of the private key.
+fuel_price_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER', 'FUEL_SVC') }}"
+      private_key: "{{ env_var('SNOWFLAKE_PRIVATE_KEY') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'TRANSFORMER') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'FUEL_WH') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'FUEL_DB') }}"
+      schema: analytics
+      threads: 4

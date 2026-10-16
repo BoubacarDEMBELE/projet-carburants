@@ -1,0 +1,7 @@
+# Versions testées ensemble le 16/10/2026 (dbt parse : 8 modèles, 23 tests).
+# dbt-core doit être épinglé : sinon pip installe une version de dbt-core incompatible avec l'adaptateur.
+requests==2.32.3
+python-dotenv==1.0.1
+snowflake-connector-python==3.18.1
+dbt-core==1.9.4
+dbt-snowflake==1.9.2

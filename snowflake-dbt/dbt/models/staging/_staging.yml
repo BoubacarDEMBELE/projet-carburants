@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: stg_fuel_prices
+    description: Fuel prices reshaped from wide to long — one row per station, fuel and run date.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [station_id, fuel_code, run_date]
+    columns:
+      - name: station_id
+        tests: [not_null]
+      - name: fuel_code
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['GAZOLE', 'SP95', 'SP98', 'E10', 'E85', 'GPLC']
+      - name: price_eur_per_litre
+        tests: [not_null]
+
+  - name: stg_stations
+    description: Latest attributes of each station.
+    columns:
+      - name: station_id
+        tests: [unique, not_null]

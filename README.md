@@ -4,6 +4,7 @@
 ![SNCF](https://github.com/BoubacarDEMBELE/projet-carburants/actions/workflows/sncf_monthly.yml/badge.svg)
 ![DVF](https://github.com/BoubacarDEMBELE/projet-carburants/actions/workflows/dvf_quarterly.yml/badge.svg)
 ![DPE](https://github.com/BoubacarDEMBELE/projet-carburants/actions/workflows/dpe_quarterly.yml/badge.svg)
+![Snowflake + dbt](https://github.com/BoubacarDEMBELE/projet-carburants/actions/workflows/snowflake_dbt_daily.yml/badge.svg)
 
 Cinq pipelines sur des données ouvertes françaises, du plus simple au plus complet.
 **Les cinq sont en production.**
@@ -22,6 +23,7 @@ Même méthode partout : **récupérer → héberger → nettoyer → croiser �
 | 3 | [Régularité TGV](sncf/) | Consommation d'API, plafonds de pagination, contrôle qualité | ✅ |
 | 4 | [Valeurs foncières (DVF)](dvf/) | Nettoyage de données réelles, dédoublonnage, valeurs aberrantes | ✅ |
 | 5 | [DVF × DPE](dpe/) | Croisement de sources sans clé commune, jointure floue, variables de contrôle | ✅ |
+| 6 | [Prix des carburants · Snowflake + dbt](snowflake-dbt/) | Entrepôt cloud, VARIANT/JSON, dbt en couches, schéma en étoile, tests, auth par clé | 🚧 mise en service |
 
 ---
 
